@@ -13,8 +13,8 @@ public class Drivetrain extends SubsystemBase{
         (velocidade) -> {m_leftMotor1.set(velocidade); m_leftMotor2.set(velocidade);},
         (velocidade) -> {m_rightMotor1.set(velocidade); m_rightMotor2.set(velocidade);}
     );
-    public Drivetrain(){ //caso algum dos lados esteja invertido por conta da construção mecânica, coloca setInverted true nos motores: m_leftMotor1.setInverted(true); por exemplo
-    
+    public Drivetrain(){ //caso algum dos lados esteja invertido por conta da construção mecânica, coloca setInverted true nos motores
+     
         
     }
 
