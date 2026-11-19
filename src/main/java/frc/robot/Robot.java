@@ -60,7 +60,7 @@ public class Robot extends TimedRobot {
     lula.setDistancePerPulse(metersPerTick);
     bolsonaro.setDistancePerPulse(metersPerTick);
     
-
+    
 
 
   }
@@ -92,6 +92,13 @@ public class Robot extends TimedRobot {
     
     leftEncoderEntry.setDouble(lula.getDistance());
     rightEncoderEntry.setDouble(bolsonaro.getDistance());
+
+    if (Math.abs(speed) < 0.05) { //deadband
+      speed = 0;
+    }
+     if (Math.abs(turn) < 0.05) {
+      speed = 0;
+    }
     
   }
 
