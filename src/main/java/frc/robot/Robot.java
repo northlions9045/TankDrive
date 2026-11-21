@@ -28,10 +28,10 @@ public class Robot extends TimedRobot {
  private WPI_VictorSPX rightSlave = new WPI_VictorSPX(2);
  private XboxController joy1 = new XboxController(0);
  private DifferentialDrive drive = new DifferentialDrive(leftMaster, rightMaster);
- private Encoder lula = new Encoder(0, 1, true, EncodingType.k4X); //encoder esquerdo
+ private Encoder lula = new Encoder(0, 1, true, EncodingType.k4X); //encoder esquerdo (para alterar a orientação de leitura, basta mudar o boolean)
  private Encoder bolsonaro = new Encoder(2, 3, true, EncodingType.k4X); //encoder direito
- private final double kP = 0.5;  //proporcional(PID)
- private double setpoint = 4;
+ private final double kP = 0.5;  //proporcional(PID) LEMBRAR DE AJUSTAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ private double setpoint = 4; //LEMBRAR DE AJUSTAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  
 
   private final double wheelDiameter = 0.1524;
@@ -44,7 +44,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void robotInit() {
-    leftMaster.setInverted(false);
+    leftMaster.setInverted(false); //orientação de inversão FÍSICA dos motores
     rightMaster.setInverted(true);
 
     leftSlave.follow(leftMaster);
@@ -53,8 +53,10 @@ public class Robot extends TimedRobot {
     leftSlave.setInverted(InvertType.FollowMaster);
     rightSlave.setInverted(InvertType.FollowMaster);
 
-    lula.setDistancePerPulse(metersPerTick);
+    lula.setDistancePerPulse(metersPerTick); //sempre que usar o metodo getDistance nos encoders ja vai ler em metros automaticamente
     bolsonaro.setDistancePerPulse(metersPerTick);
+
+    drive.setDeadband(0.05);
 
 
 
@@ -72,6 +74,8 @@ public class Robot extends TimedRobot {
     //reseta os encoders
     lula.reset();
     bolsonaro.reset();
+
+    setpoint = 5;
   
   }
    
@@ -79,13 +83,6 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousPeriodic() {
-    // lendo joystick
-    if (joy1.getAButton()) {
-      setpoint = 10;  
-
-    } else if (joy1.getBButton()) {
-      setpoint = 0;
-    }
 
     //lendo a posição do sensor 
       double leftDistance = lula.getDistance();
@@ -100,13 +97,18 @@ public class Robot extends TimedRobot {
       double outputSpeed = kP * error;
 
       //saida pros motores
-      leftMaster.set(outputSpeed);
-      rightMaster.set(outputSpeed);
+      drive.arcadeDrive(outputSpeed, 0, false);
 
-    SmartDashboard.putNumber("Sensor Position (m)", sensorPosition);
+      
+
+    SmartDashboard.putNumber("Left Distance (m)", leftDistance);
+    SmartDashboard.putNumber("Right Distance (m)", rightDistance);
+    SmartDashboard.putNumber("Average Distance (m)", sensorPosition);
     SmartDashboard.putNumber("Setpoint (m)", setpoint);
     SmartDashboard.putNumber("Error (m)", error);
     SmartDashboard.putNumber("PID Output", outputSpeed);
+    
+    
 }
 
 
@@ -118,16 +120,6 @@ public class Robot extends TimedRobot {
     double speed = -joy1.getLeftY() * 1;
     double turn = -joy1.getRightX() * 1;
 
-
-
-   
-    
-    if (Math.abs(speed) < 0.05) { //deadband
-      speed = 0;
-    }
-     if (Math.abs(turn) < 0.05) {
-      turn = 0;
-    }
      drive.arcadeDrive(speed, turn);
      
 
