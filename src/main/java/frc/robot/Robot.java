@@ -7,6 +7,7 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.CounterBase.EncodingType;
 
@@ -30,8 +31,15 @@ public class Robot extends TimedRobot {
  private DifferentialDrive drive = new DifferentialDrive(leftMaster, rightMaster);
  private Encoder lula = new Encoder(0, 1, true, EncodingType.k4X); //encoder esquerdo (para alterar a orientação de leitura, basta mudar o boolean)
  private Encoder bolsonaro = new Encoder(2, 3, true, EncodingType.k4X); //encoder direito
- private final double kP = 0.5;  //proporcional(PID) LEMBRAR DE AJUSTAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- private double setpoint = 4; //LEMBRAR DE AJUSTAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ private final double kP = 0.5;  //proportional(PID) LEMBRAR DE AJUSTAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ private final double kI = 0.5; //integral(PID) LEMBRAR DE AJUSTAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ private final double kD = 0.5; //derivative(PID) LEMBRAR DE AJUSTAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ private double iLimit = 1;
+ private double setpoint = 0; 
+
+ private double errorSum = 0;
+ private double lastTimestamp = 0;
+ private double lastError = 0;
  
 
   private final double wheelDiameter = 0.1524;
@@ -65,8 +73,8 @@ public class Robot extends TimedRobot {
   
   @Override
   public void robotPeriodic() {
-    SmartDashboard.putNumber("leftEncoder", lula.get());
-    SmartDashboard.putNumber("rightEncoder", bolsonaro.get());
+    SmartDashboard.putNumber("leftEncoder", lula.getDistance());
+    SmartDashboard.putNumber("rightEncoder", bolsonaro.getDistance());
   }
 
   @Override
@@ -75,9 +83,14 @@ public class Robot extends TimedRobot {
     lula.reset();
     bolsonaro.reset();
 
-    setpoint = 5;
+    setpoint = 5; //LEMBRAR DE AJUSTAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    errorSum = 0;
+    lastTimestamp = Timer.getFPGATimestamp();
+    lastError = 0;
   
   }
+
+  
    
 
 
@@ -90,14 +103,24 @@ public class Robot extends TimedRobot {
 
       double sensorPosition = ((leftDistance + rightDistance) / 2);
 
-      //calculando o erro(distancia que falta pra chegar ate o setpoint)
-      double error = setpoint - sensorPosition;
+      double error = setpoint - sensorPosition;  //calculando o erro(distancia que falta pra chegar ate o setpoint)
+      double dt = Timer.getFPGATimestamp() - lastTimestamp; // calculando o delta t pro calculo do Integral
+      if (Math.abs(error) < iLimit) {
+              errorSum += error * dt;
 
-      //calculando saida
-      double outputSpeed = kP * error;
+      } else {
+        errorSum = 0;
+      }
+      errorSum = Math.max(-0.5, Math.min(0.5, errorSum));
+      double errorRate = (error - lastError) / dt; 
+      double outputSpeed = kP * error + kI * errorSum + kD * errorRate; // calculando a saida
+
 
       //saida pros motores
       drive.arcadeDrive(outputSpeed, 0, false);
+      
+      lastTimestamp = Timer.getFPGATimestamp(); //atualizando o tempo
+      lastError = error; //atualizando o ultimo erro
 
       
 
@@ -133,7 +156,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void testInit() {}
-
+  
   @Override
   public void testPeriodic() {}
 
